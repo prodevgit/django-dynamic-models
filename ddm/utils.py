@@ -114,3 +114,7 @@ def process_field(field):
     result = result.replace(' ','').strip()
     result = ''.join(ch for ch in result if ch.isalnum())
     return result
+
+def DDModel(model_name):
+    from django.apps import apps
+    return apps.get_model('ddm', model_name)

@@ -1,0 +1,119 @@
+{% extends 'base.html'%}
+{%block scripts%}
+
+
+{%endblock scripts%}
+
+{%block content%}
+<!-- displaying the chart -->
+<!-- you can also play around with the width and height to increase or decrease the chart size -->
+<!-- <canvas id="myChart" width="400" height="100"></canvas> -->
+<div id="chart">
+</div>
+
+<script>
+
+    {% if ctype == "bar" %}
+    var options = {
+        plotOptions: {
+            bar: {
+                distributed: true
+            }
+        },
+        chart: {
+            type: 'bar'
+        },
+        series: [{
+            name: 'sales',
+            data: {{cdata.data | safe}}
+        }],
+        xaxis: {
+            categories: {{cdata.labels | safe}}
+        },
+        colors: {{ cdata.colors | safe}}
+    }
+    {% elif ctype == "pie" %}
+        var options = {
+            series: {{cdata.data | safe}},
+            chart: {
+            type: 'pie',
+            },
+            colors: {{ cdata.colors | safe}},
+            labels: {{cdata.labels | safe}},
+            responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                width: 200
+                },
+                legend: {
+                position: 'bottom'
+                }
+            }
+            }]
+            };
+    {% elif ctype == "stacked_bar" %}
+        var options = {
+            // series: [{
+            //     name: 'PRODUCT A',
+            //     data: [44, 55, 41, 67, 22, 43]
+            // }, 
+            // {
+            //     name: 'PRODUCT B',
+            //     data: [13, 23, 20, 8, 13, 27]
+            // }, 
+            // {
+            //     name: 'PRODUCT C',
+            //     data: [11, 17, 15, 15, 21, 14]
+            // }, 
+            // {
+            //     name: 'PRODUCT D',
+            //     data: [21, 7, 25, 13, 22, 8]
+            // }],
+            series:{{cdata.data | safe}},
+            chart: {
+            type: 'bar',
+            height: 350,
+            stacked: true,
+            toolbar: {
+                show: true
+            },
+            zoom: {
+                enabled: true
+            }
+            },
+            responsive: [{
+            breakpoint: 480,
+            options: {
+                legend: {
+                position: 'bottom',
+                offsetX: -10,
+                offsetY: 0
+                }
+            }
+            }],
+            plotOptions: {
+            bar: {
+                horizontal: false,
+                borderRadius: 10
+            },
+            },
+            xaxis: {
+            type: 'str',
+            categories: {{cdata.label | safe}}
+            },
+            legend: {
+            position: 'right',
+            offsetY: 40
+            },
+            fill: {
+            opacity: 1
+            }
+            };
+    {% endif %}
+
+    var chart = new ApexCharts(document.querySelector("#chart"), options);
+
+    chart.render();
+</script>
+{%endblock content%}
