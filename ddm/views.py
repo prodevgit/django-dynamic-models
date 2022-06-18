@@ -1,10 +1,13 @@
 import re
 from django.shortcuts import render
 from ddm.models import DataSource
-from django.db.models import Count
+from django.db.models import Count,Sum,Func,FloatField
 from colorhash import ColorHash
 from ddm.utils import DDModel
-                                 
+
+class Round(Func):
+  function = 'ROUND'
+  arity = 2
 
 def ddm_chart_view(request):
     dataset = request.GET.get('dataset',None)
@@ -12,6 +15,7 @@ def ddm_chart_view(request):
     axis_a = request.GET.get('axis_a',None)
     axis_b = request.GET.get('axis_b',None)
     ctype= request.GET.get('ctype',None)
+    operation= request.GET.get('operation','count')
     MODEL = DDModel(dataset)
     datasource = DataSource.objects.filter(model=dataset).first()
     field_map = datasource.field_map
@@ -30,14 +34,20 @@ def ddm_chart_view(request):
         if fdata[0] == axis_b:
             axis_b = field
     if axis_a:
-        queryset = MODEL.objects.all().values(axis_a).annotate(count=Count(value))
+        if operation == 'sum':
+            queryset = MODEL.objects.all().values(axis_a).annotate(count=Round(Sum(value),2,output_field=FloatField()))
+        else:
+            queryset = MODEL.objects.all().values(axis_a).annotate(count=Count(value))
         response = {'labels':[],'data':[],'colors':[]}
         for data in queryset:
             response['labels'].append(data[axis_a])
             response['data'].append(data['count'])
             response['colors'].append(ColorHash(data[axis_a]).hex)
         if axis_b:
-            queryset = MODEL.objects.all().values(axis_a,axis_b).annotate(count=Count(value)).order_by(axis_b)
+            if operation == 'sum':
+                queryset = MODEL.objects.all().values(axis_a,axis_b).annotate(count=Round(Sum(value),2,output_field=FloatField())).order_by(axis_b)
+            else:
+                queryset = MODEL.objects.all().values(axis_a,axis_b).annotate(count=Count(value)).order_by(axis_b)
             result = {}
             labels = set()
             for data in queryset:
@@ -60,7 +70,12 @@ def ddm_chart_view(request):
                 response['data'].append({'name':key,'data':cdata})
 
     else:
-        queryset = MODEL.objects.all().aggregate(Count(value))
+        if operation == 'sum':
+            queryset = MODEL.objects.all().aggregate(count=Round(Sum(value),2,output_field=FloatField()))
+        else:
+            queryset = MODEL.objects.all().aggregate(count=Count(value))
+        print(queryset)
+        response = {'data':[queryset['count']]}
     
     context={"cdata":response,"ctype":ctype}
     # print(context)
