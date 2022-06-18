@@ -1,13 +1,13 @@
-import re
 from django.shortcuts import render
 from ddm.models import DataSource
-from django.db.models import Count,Sum,Func,FloatField
+from django.db.models import Count,Sum,Func,FloatField,Avg
 from colorhash import ColorHash
 from ddm.utils import DDModel
 
 class Round(Func):
   function = 'ROUND'
   arity = 2
+
 
 def ddm_chart_view(request):
     dataset = request.GET.get('dataset',None)
@@ -36,6 +36,8 @@ def ddm_chart_view(request):
     if axis_a:
         if operation == 'sum':
             queryset = MODEL.objects.all().values(axis_a).annotate(count=Round(Sum(value),2,output_field=FloatField()))
+        elif operation == 'avg':
+            queryset = MODEL.objects.all().values(axis_a).annotate(count=Round(Avg(value),2,output_field=FloatField()))
         else:
             queryset = MODEL.objects.all().values(axis_a).annotate(count=Count(value))
         response = {'labels':[],'data':[],'colors':[]}
@@ -43,9 +45,11 @@ def ddm_chart_view(request):
             response['labels'].append(data[axis_a])
             response['data'].append(data['count'])
             response['colors'].append(ColorHash(data[axis_a]).hex)
-        if axis_b:
+        if axis_b and ctype=='bar':
             if operation == 'sum':
                 queryset = MODEL.objects.all().values(axis_a,axis_b).annotate(count=Round(Sum(value),2,output_field=FloatField())).order_by(axis_b)
+            elif operation == 'avg':
+                queryset = MODEL.objects.all().values(axis_a,axis_b).annotate(count=Round(Avg(value),2,output_field=FloatField())).order_by(axis_b)
             else:
                 queryset = MODEL.objects.all().values(axis_a,axis_b).annotate(count=Count(value)).order_by(axis_b)
             result = {}
@@ -74,12 +78,10 @@ def ddm_chart_view(request):
             queryset = MODEL.objects.all().aggregate(count=Round(Sum(value),2,output_field=FloatField()))
         else:
             queryset = MODEL.objects.all().aggregate(count=Count(value))
-        print(queryset)
-        response = {'data':[queryset['count']]}
-    
-    context={"cdata":response,"ctype":ctype}
-    # print(context)
-
+        
+        response = {'data':[queryset['count']],'labels':[value]}
+    print(queryset)
+    context={"cdata":response,"ctype":ctype,'axis_a':axis_a,'axis_b':axis_b}
 
     return render(request, "chart.html", context)
 
