@@ -23,6 +23,11 @@ class DdmConfig(AppConfig):
                         field: django_models.IntegerField(null=True,blank=True)
                     })
 
+                elif field_real[1] == 'BIGINT':
+                    attrs.update({
+                        field: django_models.BigIntegerField(null=True,blank=True)
+                    })
+
                 elif field_real[1] == 'VARCHAR':
                     attrs.update({
                         field: django_models.CharField(max_length=1000,null=True,blank=True)

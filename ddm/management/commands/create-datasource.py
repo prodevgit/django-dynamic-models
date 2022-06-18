@@ -21,6 +21,7 @@ class Command(BaseCommand):
             df = pandas.read_excel(external_datasource)
         elif external_datasource.endswith('.csv'):
             df = pandas.read_csv(external_datasource)
+        
 
         df=df.replace([numpy.inf, -numpy.inf], numpy.nan)
         df = df.fillna(0)

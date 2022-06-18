@@ -25,12 +25,20 @@ def generate_model(model_name,df,datasource_path):
         
         field = process_field(types[0])[:50]
                 
-        if types[1] == dtype('int64'):            
-            attrs.update({
-                field: django_models.IntegerField(null=True,blank=True)
-            })
-            table_query = f'{table_query},{field} INT NULL'
-            field_map[field]=[types[0],'INT']
+        if types[1] == dtype('int64'): 
+            if df[types[0]].max() > 2147483647:
+                data_type = 'BIGINT'
+                attrs.update({
+                    field: django_models.BigIntegerField(null=True,blank=True)
+                })
+            else:
+                data_type = 'INT'
+                attrs.update({
+                    field: django_models.IntegerField(null=True,blank=True)
+                })
+            
+            table_query = f'{table_query},{field} {data_type} NULL'
+            field_map[field]=[types[0],data_type]
 
         elif types[1] == dtype('O'):
             attrs.update({
